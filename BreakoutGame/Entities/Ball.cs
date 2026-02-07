@@ -54,9 +54,9 @@ public class Ball
             Velocity.X = MathF.Abs(Velocity.X);
         }
         // Right wall
-        if (Position.X >= 720 - Radius)
+        if (Position.X >= 1280 - Radius)
         {
-            Position.X = 720 - Radius;
+            Position.X = 1280 - Radius;
             Velocity.X = -MathF.Abs(Velocity.X);
         }
         // Top wall
