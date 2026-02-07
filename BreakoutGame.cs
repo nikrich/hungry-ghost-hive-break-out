@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 
 namespace BreakoutGame;
 
@@ -15,6 +16,9 @@ public class BreakoutGame : Game
     private GameManager _gameManager;
     private HUD _hud;
     private Random _rng;
+
+    private Paddle _paddle;
+    private List<Ball> _balls;
 
     public BreakoutGame()
     {
@@ -55,6 +59,14 @@ public class BreakoutGame : Game
 
         // Load font
         _font = Content.Load<SpriteFont>("GameFont");
+
+        // Create paddle
+        _paddle = new Paddle(_pixel, new Vector2(300, 1050));
+
+        // Create initial ball
+        _balls = new List<Ball>();
+        var ball = new Ball(_pixel, Vector2.Zero, 450f);
+        _balls.Add(ball);
     }
 
     protected override void Update(GameTime gameTime)
@@ -63,6 +75,27 @@ public class BreakoutGame : Game
 
         if (InputManager.IsKeyPressed(Keys.Escape))
             Exit();
+
+        // Update paddle
+        _paddle.Update(gameTime);
+
+        // Update balls
+        foreach (var ball in _balls)
+        {
+            ball.Update(gameTime, _paddle.Position, _paddle.Width);
+        }
+
+        // Handle space/enter to launch ball
+        if (InputManager.IsKeyPressed(Keys.Space) || InputManager.IsKeyPressed(Keys.Enter))
+        {
+            foreach (var ball in _balls)
+            {
+                if (ball.IsAttached)
+                {
+                    ball.Launch();
+                }
+            }
+        }
 
         base.Update(gameTime);
     }
@@ -73,7 +106,16 @@ public class BreakoutGame : Game
 
         _spriteBatch.Begin();
 
-        // Draw basic HUD for now
+        // Draw paddle
+        _paddle.Draw(_spriteBatch);
+
+        // Draw balls
+        foreach (var ball in _balls)
+        {
+            ball.Draw(_spriteBatch);
+        }
+
+        // Draw HUD
         _hud.Draw(_spriteBatch, _font, _gameManager);
 
         _spriteBatch.End();
