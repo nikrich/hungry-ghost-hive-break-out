@@ -103,7 +103,7 @@ public class BreakoutGame : Game
             float center = _paddle.Position.X + _paddle.Width / 2f;
             _paddle.Width = 120;
             _paddle.Position.X = center - _paddle.Width / 2f;
-            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 720 - _paddle.Width);
+            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 1280 - _paddle.Width);
         }
         _paddle.WidePowerUpTimer = 0f;
     }
@@ -297,7 +297,7 @@ public class BreakoutGame : Game
         _bricks.RemoveAll(b => !b.IsAlive);
 
         // Death zone detection: remove balls that fall below screen
-        _balls.RemoveAll(ball => ball.Position.Y > 1080 + ball.Radius);
+        _balls.RemoveAll(ball => ball.Position.Y > 720 + ball.Radius);
 
         // Check if all balls are lost
         if (_balls.Count == 0)
@@ -532,15 +532,15 @@ public class BreakoutGame : Game
     private void DrawPaused()
     {
         // Semi-transparent black overlay
-        _spriteBatch.Draw(_pixel, new Rectangle(0, 0, 720, 1080), Color.Black * 0.5f);
+        _spriteBatch.Draw(_pixel, new Rectangle(0, 0, 1280, 720), Color.Black * 0.5f);
 
         // "PAUSED" text centered
         string pausedText = "PAUSED";
         Vector2 pausedSize = _font.MeasureString(pausedText);
         float pausedScale = 3f;
         Vector2 pausedPos = new Vector2(
-            (720 - pausedSize.X * pausedScale) / 2,
-            1080 / 2 - 40);
+            (1280 - pausedSize.X * pausedScale) / 2,
+            720 / 2 - 40);
         _spriteBatch.DrawString(_font, pausedText, pausedPos, Color.White,
             0f, Vector2.Zero, pausedScale, SpriteEffects.None, 0f);
     }
