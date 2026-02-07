@@ -27,6 +27,7 @@ public class BreakoutGame : Game
     private float _blinkTimer;
     private bool _blinkVisible;
     private bool _isWin;
+    private float _speedDownTimer;
 
     public BreakoutGame()
     {
@@ -55,6 +56,7 @@ public class BreakoutGame : Game
         _blinkTimer = 0f;
         _blinkVisible = true;
         _isWin = false;
+        _speedDownTimer = 0f;
 
         base.Initialize();
     }
@@ -218,9 +220,49 @@ public class BreakoutGame : Game
                     ball.Velocity = CollisionHelper.GetBallBrickReflection(ball, brick);
                     int points = brick.Hit();
                     if (points > 0)
+                    {
                         _gameManager.AddScore(points);
+                        // 15% chance to spawn a power-up from destroyed brick
+                        if (_rng.NextDouble() < 0.15)
+                        {
+                            var type = (PowerUpType)_rng.Next(4);
+                            var pu = new PowerUp(_pixel,
+                                new Vector2(brick.Position.X + brick.Width / 2f - 12, brick.Position.Y),
+                                type);
+                            _powerUps.Add(pu);
+                        }
+                    }
                     break; // Only one brick collision per ball per frame
                 }
+            }
+        }
+
+        // Update power-ups
+        foreach (var pu in _powerUps)
+            pu.Update(dt);
+
+        // PowerUp vs Paddle collision
+        foreach (var pu in _powerUps)
+        {
+            if (!pu.IsActive) continue;
+            if (CollisionHelper.Intersects(pu.Bounds, _paddle.Bounds))
+            {
+                ApplyPowerUp(pu.Type);
+                pu.IsActive = false;
+            }
+        }
+
+        // Clean up inactive power-ups
+        _powerUps.RemoveAll(p => !p.IsActive);
+
+        // Speed down timer
+        if (_speedDownTimer > 0)
+        {
+            _speedDownTimer -= dt;
+            if (_speedDownTimer <= 0)
+            {
+                foreach (var ball in _balls)
+                    ball.SpeedMultiplier = 1.0f;
             }
         }
 
@@ -233,6 +275,54 @@ public class BreakoutGame : Game
         {
             _gameManager.NextLevel();
         }
+    }
+
+    private void ApplyPowerUp(PowerUpType type)
+    {
+        switch (type)
+        {
+            case PowerUpType.WidePaddle:
+                float center = _paddle.Position.X + _paddle.Width / 2f;
+                _paddle.Width = 180;
+                _paddle.Position.X = center - _paddle.Width / 2f;
+                _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 720 - _paddle.Width);
+                _paddle.WidePowerUpTimer = 10f;
+                break;
+
+            case PowerUpType.MultiBall:
+                if (_balls.Count > 0)
+                {
+                    var source = _balls[0];
+                    for (int i = 0; i < 2; i++)
+                    {
+                        var newBall = new Ball(_pixel, source.Position, source.Speed);
+                        float angle = (i == 0 ? -15f : 15f) * MathF.PI / 180f;
+                        newBall.Velocity = RotateVector(source.Velocity, angle);
+                        newBall.IsAttached = false;
+                        newBall.SpeedMultiplier = source.SpeedMultiplier;
+                        _balls.Add(newBall);
+                    }
+                }
+                break;
+
+            case PowerUpType.ExtraLife:
+                if (_gameManager.Lives < 5)
+                    _gameManager.Lives++;
+                break;
+
+            case PowerUpType.SpeedDown:
+                foreach (var ball in _balls)
+                    ball.SpeedMultiplier = 0.75f;
+                _speedDownTimer = 8f;
+                break;
+        }
+    }
+
+    private static Vector2 RotateVector(Vector2 v, float radians)
+    {
+        float cos = MathF.Cos(radians);
+        float sin = MathF.Sin(radians);
+        return new Vector2(v.X * cos - v.Y * sin, v.X * sin + v.Y * cos);
     }
 
     private void UpdateLevelComplete(float dt)
