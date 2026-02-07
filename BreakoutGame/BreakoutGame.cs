@@ -88,6 +88,26 @@ public class BreakoutGame : Game
         _balls.Add(ball);
     }
 
+    private void ClearActivePowerUps()
+    {
+        // Clear speed down timer and reset all ball speed multipliers
+        _speedDownTimer = 0f;
+        foreach (var ball in _balls)
+        {
+            ball.SpeedMultiplier = 1.0f;
+        }
+
+        // Reset paddle to default width
+        if (_paddle.Width != 120)
+        {
+            float center = _paddle.Position.X + _paddle.Width / 2f;
+            _paddle.Width = 120;
+            _paddle.Position.X = center - _paddle.Width / 2f;
+            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 720 - _paddle.Width);
+        }
+        _paddle.WidePowerUpTimer = 0f;
+    }
+
     private void LoadLevel(int levelIndex)
     {
         _bricks.Clear();
@@ -279,6 +299,8 @@ public class BreakoutGame : Game
             _gameManager.LoseLife();
             if (_gameManager.State != GameState.GameOver)
             {
+                // Clear all active power-ups and reset to default state
+                ClearActivePowerUps();
                 // Reset ball on paddle if still have lives
                 ResetBallOnPaddle();
             }
