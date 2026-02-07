@@ -83,6 +83,8 @@ public class BreakoutGame : Game
         InputManager.Update();
 
         // TODO: Implement state machine based on GameManager.State
+        // For now, just update the paddle
+        _paddle?.Update(gameTime);
 
         base.Update(gameTime);
     }
@@ -93,13 +95,14 @@ public class BreakoutGame : Game
 
         _spriteBatch.Begin();
 
-        // TODO: Draw entities based on draw order
-        // 1. Bricks
-        // 2. Power-ups
+        // Draw entities based on draw order
+        // 1. Bricks (TODO)
+        // 2. Power-ups (TODO)
         // 3. Paddle
-        // 4. Balls
-        // 5. HUD
-        // 6. Overlays
+        _paddle?.Draw(_spriteBatch);
+        // 4. Balls (TODO)
+        // 5. HUD (TODO)
+        // 6. Overlays (TODO)
 
         _spriteBatch.End();
 
