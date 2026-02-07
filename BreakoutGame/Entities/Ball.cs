@@ -54,9 +54,9 @@ public class Ball
             Velocity.X = MathF.Abs(Velocity.X);
         }
         // Right wall
-        if (Position.X >= 1280 - Radius)
+        if (Position.X >= BreakoutGame.ScreenWidth - Radius)
         {
-            Position.X = 1280 - Radius;
+            Position.X = BreakoutGame.ScreenWidth - Radius;
             Velocity.X = -MathF.Abs(Velocity.X);
         }
         // Top wall

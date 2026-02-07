@@ -33,7 +33,7 @@ public class Paddle
 
         Position.X = InputManager.MouseX - Width / 2f;
 
-        Position.X = MathHelper.Clamp(Position.X, 0, 1280 - Width);
+        Position.X = MathHelper.Clamp(Position.X, 0, BreakoutGame.ScreenWidth - Width);
 
         if (WidePowerUpTimer > 0)
         {
@@ -43,7 +43,7 @@ public class Paddle
                 float center = Position.X + Width / 2f;
                 Width = 120;
                 Position.X = center - Width / 2f;
-                Position.X = MathHelper.Clamp(Position.X, 0, 1280 - Width);
+                Position.X = MathHelper.Clamp(Position.X, 0, BreakoutGame.ScreenWidth - Width);
             }
         }
     }

@@ -13,6 +13,10 @@ namespace BreakoutGame;
 
 public class BreakoutGame : Game
 {
+    public const int ScreenWidth = 1280;
+    public const int ScreenHeight = 720;
+    public const int PaddleY = 680;
+
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
     private Texture2D _pixel;
@@ -40,8 +44,8 @@ public class BreakoutGame : Game
 
     protected override void Initialize()
     {
-        _graphics.PreferredBackBufferWidth = 1280;
-        _graphics.PreferredBackBufferHeight = 720;
+        _graphics.PreferredBackBufferWidth = ScreenWidth;
+        _graphics.PreferredBackBufferHeight = ScreenHeight;
         _graphics.ApplyChanges();
 
         Window.AllowUserResizing = false;
@@ -70,7 +74,7 @@ public class BreakoutGame : Game
 
         _font = Content.Load<SpriteFont>("GameFont");
 
-        _paddle = new Paddle(_pixel, new Vector2(580, 690));
+        _paddle = new Paddle(_pixel, new Vector2(ScreenWidth / 2f - 60, PaddleY));
         ResetBallOnPaddle();
     }
 
@@ -103,7 +107,7 @@ public class BreakoutGame : Game
             float center = _paddle.Position.X + _paddle.Width / 2f;
             _paddle.Width = 120;
             _paddle.Position.X = center - _paddle.Width / 2f;
-            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 1280 - _paddle.Width);
+            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, ScreenWidth - _paddle.Width);
         }
         _paddle.WidePowerUpTimer = 0f;
     }
@@ -122,7 +126,7 @@ public class BreakoutGame : Game
         int gap = 4;
 
         int gridWidth = cols * (brickW + gap) - gap;
-        int offsetX = (1280 - gridWidth) / 2;
+        int offsetX = (ScreenWidth - gridWidth) / 2;
         int offsetY = 80;
 
         for (int r = 0; r < rows; r++)
@@ -147,10 +151,12 @@ public class BreakoutGame : Game
         InputManager.Update();
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        // Global fullscreen toggle with F11
-        if (InputManager.IsKeyPressed(Keys.F11))
+        // Fullscreen toggle: F11 or Alt+Enter
+        if (InputManager.IsKeyPressed(Keys.F11) ||
+            (InputManager.IsKeyDown(Keys.LeftAlt) && InputManager.IsKeyPressed(Keys.Enter)))
         {
-            _graphics.ToggleFullScreen();
+            _graphics.IsFullScreen = !_graphics.IsFullScreen;
+            _graphics.ApplyChanges();
         }
 
         switch (_gameManager.State)
@@ -188,7 +194,7 @@ public class BreakoutGame : Game
         {
             _gameManager.Reset();
             _gameManager.State = GameState.Playing;
-            _paddle.Position = new Vector2(580, 690);
+            _paddle.Position = new Vector2(ScreenWidth / 2f - _paddle.Width / 2f, PaddleY);
             ResetBallOnPaddle();
             LoadLevel(_gameManager.CurrentLevel);
         }
@@ -297,7 +303,7 @@ public class BreakoutGame : Game
         _bricks.RemoveAll(b => !b.IsAlive);
 
         // Death zone detection: remove balls that fall below screen
-        _balls.RemoveAll(ball => ball.Position.Y > 720 + ball.Radius);
+        _balls.RemoveAll(ball => ball.Position.Y > ScreenHeight + ball.Radius);
 
         // Check if all balls are lost
         if (_balls.Count == 0)
@@ -334,7 +340,7 @@ public class BreakoutGame : Game
                 float center = _paddle.Position.X + _paddle.Width / 2f;
                 _paddle.Width = 180;
                 _paddle.Position.X = center - _paddle.Width / 2f;
-                _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 1280 - _paddle.Width);
+                _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, ScreenWidth - _paddle.Width);
                 _paddle.WidePowerUpTimer = 10f;
                 break;
 
@@ -389,7 +395,7 @@ public class BreakoutGame : Game
             {
                 // Load next level
                 LoadLevel(_gameManager.CurrentLevel);
-                _paddle.Position = new Vector2(580, 690);
+                _paddle.Position = new Vector2(ScreenWidth / 2f - _paddle.Width / 2f, PaddleY);
                 ResetBallOnPaddle();
                 _gameManager.State = GameState.Playing;
             }
@@ -452,8 +458,8 @@ public class BreakoutGame : Game
         Vector2 titleSize = _font.MeasureString(title);
         float titleScale = 4f;
         Vector2 titlePos = new Vector2(
-            (1280 - titleSize.X * titleScale) / 2,
-            720 / 2 - 80);
+            (ScreenWidth - titleSize.X * titleScale) / 2,
+            ScreenHeight / 2 - 80);
         _spriteBatch.DrawString(_font, title, titlePos, Color.White,
             0f, Vector2.Zero, titleScale, SpriteEffects.None, 0f);
 
@@ -463,8 +469,8 @@ public class BreakoutGame : Game
             Vector2 startSize = _font.MeasureString(startText);
             float startScale = 1.5f;
             Vector2 startPos = new Vector2(
-                (1280 - startSize.X * startScale) / 2,
-                720 / 2 + 40);
+                (ScreenWidth - startSize.X * startScale) / 2,
+                ScreenHeight / 2 + 40);
             _spriteBatch.DrawString(_font, startText, startPos, Color.White,
                 0f, Vector2.Zero, startScale, SpriteEffects.None, 0f);
         }
@@ -493,8 +499,8 @@ public class BreakoutGame : Game
         Vector2 size = _font.MeasureString(text);
         float scale = 2.5f;
         Vector2 pos = new Vector2(
-            (1280 - size.X * scale) / 2,
-            720 / 2 - 20);
+            (ScreenWidth - size.X * scale) / 2,
+            ScreenHeight / 2 - 20);
         _spriteBatch.DrawString(_font, text, pos, Color.White,
             0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
     }
@@ -505,8 +511,8 @@ public class BreakoutGame : Game
         Vector2 headerSize = _font.MeasureString(header);
         float headerScale = 3f;
         Vector2 headerPos = new Vector2(
-            (1280 - headerSize.X * headerScale) / 2,
-            720 / 2 - 80);
+            (ScreenWidth - headerSize.X * headerScale) / 2,
+            ScreenHeight / 2 - 80);
         _spriteBatch.DrawString(_font, header, headerPos, Color.White,
             0f, Vector2.Zero, headerScale, SpriteEffects.None, 0f);
 
@@ -514,8 +520,8 @@ public class BreakoutGame : Game
         Vector2 scoreSize = _font.MeasureString(scoreText);
         float scoreScale = 1.5f;
         Vector2 scorePos = new Vector2(
-            (1280 - scoreSize.X * scoreScale) / 2,
-            720 / 2 + 10);
+            (ScreenWidth - scoreSize.X * scoreScale) / 2,
+            ScreenHeight / 2 + 10);
         _spriteBatch.DrawString(_font, scoreText, scorePos, Color.White,
             0f, Vector2.Zero, scoreScale, SpriteEffects.None, 0f);
 
@@ -523,8 +529,8 @@ public class BreakoutGame : Game
         Vector2 restartSize = _font.MeasureString(restartText);
         float restartScale = 1.2f;
         Vector2 restartPos = new Vector2(
-            (1280 - restartSize.X * restartScale) / 2,
-            720 / 2 + 80);
+            (ScreenWidth - restartSize.X * restartScale) / 2,
+            ScreenHeight / 2 + 80);
         _spriteBatch.DrawString(_font, restartText, restartPos, Color.White,
             0f, Vector2.Zero, restartScale, SpriteEffects.None, 0f);
     }
@@ -532,15 +538,15 @@ public class BreakoutGame : Game
     private void DrawPaused()
     {
         // Semi-transparent black overlay
-        _spriteBatch.Draw(_pixel, new Rectangle(0, 0, 1280, 720), Color.Black * 0.5f);
+        _spriteBatch.Draw(_pixel, new Rectangle(0, 0, ScreenWidth, ScreenHeight), Color.Black * 0.5f);
 
         // "PAUSED" text centered
         string pausedText = "PAUSED";
         Vector2 pausedSize = _font.MeasureString(pausedText);
         float pausedScale = 3f;
         Vector2 pausedPos = new Vector2(
-            (1280 - pausedSize.X * pausedScale) / 2,
-            720 / 2 - 40);
+            (ScreenWidth - pausedSize.X * pausedScale) / 2,
+            ScreenHeight / 2 - 40);
         _spriteBatch.DrawString(_font, pausedText, pausedPos, Color.White,
             0f, Vector2.Zero, pausedScale, SpriteEffects.None, 0f);
     }
