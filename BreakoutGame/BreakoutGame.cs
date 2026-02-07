@@ -26,6 +26,7 @@ public class BreakoutGame : Game
     private Random _rng;
     private float _blinkTimer;
     private bool _blinkVisible;
+    private bool _isWin;
 
     public BreakoutGame()
     {
@@ -53,6 +54,7 @@ public class BreakoutGame : Game
         _powerUps = new List<PowerUp>();
         _blinkTimer = 0f;
         _blinkVisible = true;
+        _isWin = false;
 
         base.Initialize();
     }
@@ -70,10 +72,15 @@ public class BreakoutGame : Game
         ResetBallOnPaddle();
     }
 
+    private float GetBallSpeedForLevel(int levelIndex)
+    {
+        return Math.Min(450f + (levelIndex * 25f), 700f);
+    }
+
     private void ResetBallOnPaddle()
     {
         _balls.Clear();
-        var ball = new Ball(_pixel, Vector2.Zero, 450f);
+        var ball = new Ball(_pixel, Vector2.Zero, GetBallSpeedForLevel(_gameManager.CurrentLevel));
         ball.IsAttached = true;
         ball.AttachToPaddle(_paddle);
         _balls.Add(ball);
@@ -127,8 +134,10 @@ public class BreakoutGame : Game
                 UpdatePlaying(dt);
                 break;
             case GameState.LevelComplete:
+                UpdateLevelComplete(dt);
                 break;
             case GameState.GameOver:
+                UpdateGameOver();
                 break;
             case GameState.Paused:
                 break;
@@ -226,6 +235,38 @@ public class BreakoutGame : Game
         }
     }
 
+    private void UpdateLevelComplete(float dt)
+    {
+        _gameManager.StateTimer -= dt;
+        if (_gameManager.StateTimer <= 0)
+        {
+            if (_gameManager.CurrentLevel >= LevelData.Levels.Length)
+            {
+                // All levels completed — player wins
+                _isWin = true;
+                _gameManager.State = GameState.GameOver;
+            }
+            else
+            {
+                // Load next level
+                LoadLevel(_gameManager.CurrentLevel);
+                _paddle.Position = new Vector2(300, 1040);
+                ResetBallOnPaddle();
+                _gameManager.State = GameState.Playing;
+            }
+        }
+    }
+
+    private void UpdateGameOver()
+    {
+        if (InputManager.IsKeyPressed(Keys.Space))
+        {
+            _gameManager.Reset();
+            _isWin = false;
+            _gameManager.State = GameState.Title;
+        }
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
@@ -241,8 +282,11 @@ public class BreakoutGame : Game
                 DrawPlaying();
                 break;
             case GameState.LevelComplete:
+                DrawPlaying();
+                DrawLevelComplete();
                 break;
             case GameState.GameOver:
+                DrawGameOver();
                 break;
             case GameState.Paused:
                 break;
@@ -292,5 +336,47 @@ public class BreakoutGame : Game
             ball.Draw(_spriteBatch);
 
         _hud.Draw(_spriteBatch, _font, _gameManager);
+    }
+
+    private void DrawLevelComplete()
+    {
+        string text = "LEVEL COMPLETE";
+        Vector2 size = _font.MeasureString(text);
+        float scale = 2.5f;
+        Vector2 pos = new Vector2(
+            (720 - size.X * scale) / 2,
+            1080 / 2 - 20);
+        _spriteBatch.DrawString(_font, text, pos, Color.White,
+            0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+    }
+
+    private void DrawGameOver()
+    {
+        string header = _isWin ? "YOU WIN" : "GAME OVER";
+        Vector2 headerSize = _font.MeasureString(header);
+        float headerScale = 3f;
+        Vector2 headerPos = new Vector2(
+            (720 - headerSize.X * headerScale) / 2,
+            1080 / 2 - 80);
+        _spriteBatch.DrawString(_font, header, headerPos, Color.White,
+            0f, Vector2.Zero, headerScale, SpriteEffects.None, 0f);
+
+        string scoreText = $"Final Score: {_gameManager.Score}";
+        Vector2 scoreSize = _font.MeasureString(scoreText);
+        float scoreScale = 1.5f;
+        Vector2 scorePos = new Vector2(
+            (720 - scoreSize.X * scoreScale) / 2,
+            1080 / 2 + 10);
+        _spriteBatch.DrawString(_font, scoreText, scorePos, Color.White,
+            0f, Vector2.Zero, scoreScale, SpriteEffects.None, 0f);
+
+        string restartText = "Press SPACE to Restart";
+        Vector2 restartSize = _font.MeasureString(restartText);
+        float restartScale = 1.2f;
+        Vector2 restartPos = new Vector2(
+            (720 - restartSize.X * restartScale) / 2,
+            1080 / 2 + 80);
+        _spriteBatch.DrawString(_font, restartText, restartPos, Color.White,
+            0f, Vector2.Zero, restartScale, SpriteEffects.None, 0f);
     }
 }
