@@ -84,6 +84,50 @@ public class BreakoutGame : Game
         InputManager.Update();
 
         // TODO: Implement state machine based on GameManager.State
+        // For now, just update entities and handle collisions
+
+        // Update balls
+        foreach (var ball in _balls)
+            ball.Update(gameTime);
+
+        // Ball vs Brick collision
+        foreach (var ball in _balls)
+        {
+            Rectangle ballRect = new Rectangle(
+                (int)(ball.Position.X - ball.Radius),
+                (int)(ball.Position.Y - ball.Radius),
+                (int)(ball.Radius * 2),
+                (int)(ball.Radius * 2));
+
+            // Check collision with each alive brick
+            foreach (var brick in _bricks)
+            {
+                if (!brick.IsAlive) continue;
+
+                Rectangle brickRect = new Rectangle(
+                    (int)brick.Position.X,
+                    (int)brick.Position.Y,
+                    brick.Width,
+                    brick.Height);
+
+                if (CollisionHelper.Intersects(ballRect, brickRect))
+                {
+                    // Hit the brick and get points
+                    int points = brick.Hit();
+                    if (points > 0)
+                        _gameManager.AddScore(points);
+
+                    // Reflect ball velocity
+                    ball.Velocity = CollisionHelper.GetBallBrickReflection(ball, brick);
+
+                    // Break after first brick collision to prevent multi-hit glitches
+                    break;
+                }
+            }
+        }
+
+        // Remove dead bricks
+        _bricks.RemoveAll(b => !b.IsAlive);
 
         base.Update(gameTime);
     }
