@@ -86,9 +86,16 @@ public class BreakoutGame : Game
         // TODO: Implement state machine based on GameManager.State
         // For now, just update entities and handle collisions
 
+        // Update paddle
+        _paddle.Update(gameTime);
+
         // Update balls
         foreach (var ball in _balls)
             ball.Update(gameTime);
+
+        // Update power-ups
+        foreach (var powerUp in _powerUps)
+            powerUp.Update(gameTime);
 
         // Ball vs Brick collision
         foreach (var ball in _balls)
@@ -138,16 +145,26 @@ public class BreakoutGame : Game
 
         _spriteBatch.Begin();
 
-        // Draw entities based on draw order
-        // 1. Bricks
+        // Draw entities in correct order (back to front)
+        // 1. Bricks (back)
         foreach (var brick in _bricks)
             brick.Draw(_spriteBatch);
 
-        // 2. Power-ups (TODO)
-        // 3. Paddle (TODO)
-        // 4. Balls (TODO)
-        // 5. HUD (TODO)
-        // 6. Overlays (TODO)
+        // 2. Power-ups
+        foreach (var powerUp in _powerUps)
+            powerUp.Draw(_spriteBatch, _font);
+
+        // 3. Paddle
+        _paddle.Draw(_spriteBatch);
+
+        // 4. Balls (front)
+        foreach (var ball in _balls)
+            ball.Draw(_spriteBatch);
+
+        // 5. HUD (topmost)
+        _hud.Draw(_spriteBatch, _font, _gameManager);
+
+        // 6. Overlays (TODO: will be added by state machine story)
 
         _spriteBatch.End();
 
