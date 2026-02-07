@@ -97,6 +97,9 @@ public class BreakoutGame : Game
             }
         }
 
+        // Check ball-paddle collisions
+        CheckBallPaddleCollisions();
+
         base.Update(gameTime);
     }
 
@@ -121,5 +124,38 @@ public class BreakoutGame : Game
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    private void CheckBallPaddleCollisions()
+    {
+        var paddleRect = new Rectangle((int)_paddle.Position.X, (int)_paddle.Position.Y, _paddle.Width, _paddle.Height);
+
+        foreach (var ball in _balls)
+        {
+            // Skip attached balls
+            if (ball.IsAttached)
+                continue;
+
+            var ballRect = new Rectangle(
+                (int)(ball.Position.X - ball.Radius),
+                (int)(ball.Position.Y - ball.Radius),
+                (int)(ball.Radius * 2),
+                (int)(ball.Radius * 2));
+
+            // Check intersection and only reflect when moving downward
+            if (CollisionHelper.Intersects(ballRect, paddleRect) && ball.Velocity.Y > 0)
+            {
+                // Calculate hit position on paddle (0 to 1, left to right)
+                float hitPos = (ball.Position.X - _paddle.Position.X) / _paddle.Width;
+                hitPos = MathHelper.Clamp(hitPos, 0, 1);
+
+                // Map hit position to angle (-60 to +60 degrees)
+                float angleInDegrees = MathHelper.Lerp(-60f, 60f, hitPos);
+                float angle = angleInDegrees * MathF.PI / 180f;
+
+                // Set velocity based on angle
+                ball.Velocity = new Vector2(MathF.Sin(angle), -MathF.Cos(angle)) * ball.Speed * ball.SpeedMultiplier;
+            }
+        }
     }
 }
