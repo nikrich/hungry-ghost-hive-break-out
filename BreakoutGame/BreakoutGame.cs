@@ -88,6 +88,26 @@ public class BreakoutGame : Game
         _balls.Add(ball);
     }
 
+    private void ClearActivePowerUps()
+    {
+        // Clear speed down timer and reset all ball speed multipliers
+        _speedDownTimer = 0f;
+        foreach (var ball in _balls)
+        {
+            ball.SpeedMultiplier = 1.0f;
+        }
+
+        // Reset paddle to default width
+        if (_paddle.Width != 120)
+        {
+            float center = _paddle.Position.X + _paddle.Width / 2f;
+            _paddle.Width = 120;
+            _paddle.Position.X = center - _paddle.Width / 2f;
+            _paddle.Position.X = MathHelper.Clamp(_paddle.Position.X, 0, 720 - _paddle.Width);
+        }
+        _paddle.WidePowerUpTimer = 0f;
+    }
+
     private void LoadLevel(int levelIndex)
     {
         _bricks.Clear();
@@ -142,6 +162,7 @@ public class BreakoutGame : Game
                 UpdateGameOver();
                 break;
             case GameState.Paused:
+                UpdatePaused();
                 break;
         }
 
@@ -269,11 +290,33 @@ public class BreakoutGame : Game
         // Clean up dead bricks
         _bricks.RemoveAll(b => !b.IsAlive);
 
+        // Death zone detection: remove balls that fall below screen
+        _balls.RemoveAll(ball => ball.Position.Y > 1080 + ball.Radius);
+
+        // Check if all balls are lost
+        if (_balls.Count == 0)
+        {
+            _gameManager.LoseLife();
+            if (_gameManager.State != GameState.GameOver)
+            {
+                // Clear all active power-ups and reset to default state
+                ClearActivePowerUps();
+                // Reset ball on paddle if still have lives
+                ResetBallOnPaddle();
+            }
+        }
+
         // Check level clear: all destructible bricks destroyed
         bool levelCleared = !_bricks.Any(b => !b.IsIndestructible);
         if (levelCleared)
         {
             _gameManager.NextLevel();
+        }
+
+        // Pause on Escape
+        if (InputManager.IsKeyPressed(Keys.Escape))
+        {
+            _gameManager.State = GameState.Paused;
         }
     }
 
@@ -357,6 +400,14 @@ public class BreakoutGame : Game
         }
     }
 
+    private void UpdatePaused()
+    {
+        if (InputManager.IsKeyPressed(Keys.Escape))
+        {
+            _gameManager.State = GameState.Playing;
+        }
+    }
+
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.Black);
@@ -379,6 +430,8 @@ public class BreakoutGame : Game
                 DrawGameOver();
                 break;
             case GameState.Paused:
+                DrawPlaying();
+                DrawPaused();
                 break;
         }
 
@@ -468,5 +521,21 @@ public class BreakoutGame : Game
             1080 / 2 + 80);
         _spriteBatch.DrawString(_font, restartText, restartPos, Color.White,
             0f, Vector2.Zero, restartScale, SpriteEffects.None, 0f);
+    }
+
+    private void DrawPaused()
+    {
+        // Semi-transparent black overlay
+        _spriteBatch.Draw(_pixel, new Rectangle(0, 0, 720, 1080), Color.Black * 0.5f);
+
+        // "PAUSED" text centered
+        string pausedText = "PAUSED";
+        Vector2 pausedSize = _font.MeasureString(pausedText);
+        float pausedScale = 3f;
+        Vector2 pausedPos = new Vector2(
+            (720 - pausedSize.X * pausedScale) / 2,
+            1080 / 2 - 40);
+        _spriteBatch.DrawString(_font, pausedText, pausedPos, Color.White,
+            0f, Vector2.Zero, pausedScale, SpriteEffects.None, 0f);
     }
 }
