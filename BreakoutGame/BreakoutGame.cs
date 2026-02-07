@@ -129,6 +129,24 @@ public class BreakoutGame : Game
         // Remove dead bricks
         _bricks.RemoveAll(b => !b.IsAlive);
 
+        // Death zone check - remove balls that fall below screen
+        _balls.RemoveAll(ball => ball.Position.Y > 1080 + ball.Radius);
+
+        // Check if all balls are lost
+        if (_balls.Count == 0 && _gameManager.State == GameState.Playing)
+        {
+            _gameManager.LoseLife();
+
+            if (_gameManager.Lives > 0)
+            {
+                // Create new ball attached to paddle
+                var newBall = new Ball(_pixel, _paddle.Position, 450f);
+                newBall.IsAttached = true;
+                _balls.Add(newBall);
+            }
+            // If lives == 0, GameManager.LoseLife() already set state to GameOver
+        }
+
         base.Update(gameTime);
     }
 
@@ -158,6 +176,7 @@ public class BreakoutGame : Game
     {
         _bricks.Clear();
         _powerUps.Clear();
+        _balls.Clear();
 
         int[,] layout = LevelData.Levels[levelIndex];
         int rows = layout.GetLength(0);
@@ -186,5 +205,12 @@ public class BreakoutGame : Game
                 _bricks.Add(brick);
             }
         }
+
+        // Create initial ball attached to paddle
+        // Ball speed increases with level (handled in BRK-007)
+        float ballSpeed = 450f;
+        var ball = new Ball(_pixel, _paddle.Position, ballSpeed);
+        ball.IsAttached = true;
+        _balls.Add(ball);
     }
 }
