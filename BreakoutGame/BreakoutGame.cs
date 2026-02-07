@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using BreakoutGame.Entities;
+using BreakoutGame.Levels;
 using BreakoutGame.Systems;
+using BreakoutGame.UI;
 
 namespace BreakoutGame;
 
@@ -19,6 +22,7 @@ public class BreakoutGame : Game
     private List<Brick> _bricks;
     private List<PowerUp> _powerUps;
     private GameManager _gameManager;
+    private HUD _hud;
     private Random _rng;
     private float _blinkTimer;
     private bool _blinkVisible;
@@ -42,6 +46,7 @@ public class BreakoutGame : Game
         Window.Title = "Breakout";
 
         _gameManager = new GameManager();
+        _hud = new HUD();
         _rng = new Random();
         _balls = new List<Ball>();
         _bricks = new List<Brick>();
@@ -72,6 +77,40 @@ public class BreakoutGame : Game
         ball.IsAttached = true;
         ball.AttachToPaddle(_paddle);
         _balls.Add(ball);
+    }
+
+    private void LoadLevel(int levelIndex)
+    {
+        _bricks.Clear();
+        _powerUps.Clear();
+
+        int[,] layout = LevelData.Levels[levelIndex];
+        int rows = layout.GetLength(0);
+        int cols = layout.GetLength(1);
+
+        int brickW = 64;
+        int brickH = 24;
+        int gap = 4;
+
+        int gridWidth = cols * (brickW + gap) - gap;
+        int offsetX = (720 - gridWidth) / 2;
+        int offsetY = 80;
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                int val = layout[r, c];
+                if (val == 0) continue;
+
+                var pos = new Vector2(
+                    offsetX + c * (brickW + gap),
+                    offsetY + r * (brickH + gap));
+
+                var brick = new Brick(_pixel, pos, brickW, brickH, val);
+                _bricks.Add(brick);
+            }
+        }
     }
 
     protected override void Update(GameTime gameTime)
@@ -113,6 +152,7 @@ public class BreakoutGame : Game
             _gameManager.State = GameState.Playing;
             _paddle.Position = new Vector2(300, 1040);
             ResetBallOnPaddle();
+            LoadLevel(_gameManager.CurrentLevel);
         }
     }
 
@@ -153,6 +193,36 @@ public class BreakoutGame : Game
                 // Push ball above paddle to prevent re-collision
                 ball.Position.Y = _paddle.Position.Y - ball.Radius;
             }
+        }
+
+        // Ball vs Brick collision (one brick per ball per frame)
+        foreach (var ball in _balls)
+        {
+            if (ball.IsAttached) continue;
+
+            foreach (var brick in _bricks)
+            {
+                if (!brick.IsAlive) continue;
+
+                if (CollisionHelper.Intersects(ball.Bounds, brick.Bounds))
+                {
+                    ball.Velocity = CollisionHelper.GetBallBrickReflection(ball, brick);
+                    int points = brick.Hit();
+                    if (points > 0)
+                        _gameManager.AddScore(points);
+                    break; // Only one brick collision per ball per frame
+                }
+            }
+        }
+
+        // Clean up dead bricks
+        _bricks.RemoveAll(b => !b.IsAlive);
+
+        // Check level clear: all destructible bricks destroyed
+        bool levelCleared = !_bricks.Any(b => !b.IsIndestructible);
+        if (levelCleared)
+        {
+            _gameManager.NextLevel();
         }
     }
 
@@ -209,9 +279,18 @@ public class BreakoutGame : Game
 
     private void DrawPlaying()
     {
+        // Draw order per spec: bricks, power-ups, paddle, balls, HUD
+        foreach (var brick in _bricks)
+            brick.Draw(_spriteBatch);
+
+        foreach (var pu in _powerUps)
+            pu.Draw(_spriteBatch, _font);
+
         _paddle.Draw(_spriteBatch);
 
         foreach (var ball in _balls)
             ball.Draw(_spriteBatch);
+
+        _hud.Draw(_spriteBatch, _font, _gameManager);
     }
 }
