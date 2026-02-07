@@ -31,9 +31,27 @@ public class Brick
 
     public int Hit()
     {
-        // TODO: Implement brick hit logic
+        if (IsIndestructible) return 0;
+
+        HP--;
+        if (HP <= 0)
+        {
+            IsAlive = false;
+            return PointsForMaxHP(MaxHP);
+        }
+
+        Color = GetColorForHP(HP);
         return 0;
     }
+
+    private int PointsForMaxHP(int maxHp) => maxHp switch
+    {
+        1 => 10,
+        2 => 20,
+        3 => 30,
+        4 => 50,
+        _ => 50
+    };
 
     private Color GetColorForHP(int hp) => hp switch
     {

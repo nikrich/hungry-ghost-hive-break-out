@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using BreakoutGame.Entities;
+using BreakoutGame.Levels;
 using BreakoutGame.Systems;
 using BreakoutGame.UI;
 using System;
@@ -93,16 +94,53 @@ public class BreakoutGame : Game
 
         _spriteBatch.Begin();
 
-        // TODO: Draw entities based on draw order
+        // Draw entities based on draw order
         // 1. Bricks
-        // 2. Power-ups
-        // 3. Paddle
-        // 4. Balls
-        // 5. HUD
-        // 6. Overlays
+        foreach (var brick in _bricks)
+            brick.Draw(_spriteBatch);
+
+        // 2. Power-ups (TODO)
+        // 3. Paddle (TODO)
+        // 4. Balls (TODO)
+        // 5. HUD (TODO)
+        // 6. Overlays (TODO)
 
         _spriteBatch.End();
 
         base.Draw(gameTime);
+    }
+
+    private void LoadLevel(int levelIndex)
+    {
+        _bricks.Clear();
+        _powerUps.Clear();
+
+        int[,] layout = LevelData.Levels[levelIndex];
+        int rows = layout.GetLength(0);
+        int cols = layout.GetLength(1);
+
+        int brickW = 64;
+        int brickH = 24;
+        int gap = 2;
+
+        int gridWidth = cols * (brickW + gap) - gap;
+        int offsetX = (720 - gridWidth) / 2;
+        int offsetY = 80; // below HUD
+
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                int val = layout[r, c];
+                if (val == 0) continue;
+
+                var pos = new Vector2(
+                    offsetX + c * (brickW + gap),
+                    offsetY + r * (brickH + gap));
+
+                var brick = new Brick(_pixel, pos, brickW, brickH, val);
+                _bricks.Add(brick);
+            }
+        }
     }
 }
