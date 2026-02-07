@@ -14,9 +14,9 @@ public class HUD
         spriteBatch.DrawString(font, scoreText, new Vector2(16, 8), Color.White);
 
         var levelSize = font.MeasureString(levelText);
-        spriteBatch.DrawString(font, levelText, new Vector2(360 - levelSize.X / 2, 8), Color.White);
+        spriteBatch.DrawString(font, levelText, new Vector2(BreakoutGame.ScreenWidth / 2f - levelSize.X / 2, 8), Color.White);
 
         var livesSize = font.MeasureString(livesText);
-        spriteBatch.DrawString(font, livesText, new Vector2(704 - livesSize.X, 8), Color.White);
+        spriteBatch.DrawString(font, livesText, new Vector2(BreakoutGame.ScreenWidth - 16 - livesSize.X, 8), Color.White);
     }
 }
