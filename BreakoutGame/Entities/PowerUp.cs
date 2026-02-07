@@ -44,7 +44,7 @@ public class PowerUp
     public void Update(float deltaTime)
     {
         Position.Y += FallSpeed * deltaTime;
-        if (Position.Y > 1080)
+        if (Position.Y > BreakoutGame.ScreenHeight)
             IsActive = false;
     }
 
