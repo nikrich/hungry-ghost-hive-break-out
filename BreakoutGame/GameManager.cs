@@ -30,6 +30,8 @@ public class GameManager
 
     public void NextLevel()
     {
+        // Award level clear bonus: 500 * level number (1-indexed)
+        Score += 500 * (CurrentLevel + 1);
         CurrentLevel++;
         State = GameState.LevelComplete;
         StateTimer = 1.5f;
