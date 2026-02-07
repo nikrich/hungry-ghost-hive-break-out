@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using BreakoutGame.Entities;
 using BreakoutGame.Systems;
 
 namespace BreakoutGame;
@@ -13,6 +14,10 @@ public class BreakoutGame : Game
     private SpriteBatch _spriteBatch;
     private Texture2D _pixel;
     private SpriteFont _font;
+    private Paddle _paddle;
+    private List<Ball> _balls;
+    private List<Brick> _bricks;
+    private List<PowerUp> _powerUps;
     private GameManager _gameManager;
     private Random _rng;
     private float _blinkTimer;
@@ -38,6 +43,9 @@ public class BreakoutGame : Game
 
         _gameManager = new GameManager();
         _rng = new Random();
+        _balls = new List<Ball>();
+        _bricks = new List<Brick>();
+        _powerUps = new List<PowerUp>();
         _blinkTimer = 0f;
         _blinkVisible = true;
 
@@ -52,6 +60,18 @@ public class BreakoutGame : Game
         _pixel.SetData(new[] { Color.White });
 
         _font = Content.Load<SpriteFont>("GameFont");
+
+        _paddle = new Paddle(_pixel, new Vector2(300, 1040));
+        ResetBallOnPaddle();
+    }
+
+    private void ResetBallOnPaddle()
+    {
+        _balls.Clear();
+        var ball = new Ball(_pixel, Vector2.Zero, 450f);
+        ball.IsAttached = true;
+        ball.AttachToPaddle(_paddle);
+        _balls.Add(ball);
     }
 
     protected override void Update(GameTime gameTime)
@@ -65,6 +85,7 @@ public class BreakoutGame : Game
                 UpdateTitle(dt);
                 break;
             case GameState.Playing:
+                UpdatePlaying(dt);
                 break;
             case GameState.LevelComplete:
                 break;
@@ -90,6 +111,48 @@ public class BreakoutGame : Game
         {
             _gameManager.Reset();
             _gameManager.State = GameState.Playing;
+            _paddle.Position = new Vector2(300, 1040);
+            ResetBallOnPaddle();
+        }
+    }
+
+    private void UpdatePlaying(float dt)
+    {
+        _paddle.Update(dt);
+
+        foreach (var ball in _balls)
+        {
+            if (ball.IsAttached)
+            {
+                ball.AttachToPaddle(_paddle);
+
+                if (InputManager.IsKeyPressed(Keys.Space) || InputManager.IsKeyPressed(Keys.Enter))
+                {
+                    ball.Launch(_rng);
+                }
+            }
+            else
+            {
+                ball.Update(dt);
+            }
+        }
+
+        // Ball vs Paddle collision
+        foreach (var ball in _balls)
+        {
+            if (ball.IsAttached) continue;
+            if (ball.Velocity.Y <= 0) continue;
+
+            if (CollisionHelper.Intersects(ball.Bounds, _paddle.Bounds))
+            {
+                float hitPos = (ball.Position.X - _paddle.Position.X) / _paddle.Width;
+                hitPos = MathHelper.Clamp(hitPos, 0f, 1f);
+                float angle = MathHelper.Lerp(-60f, 60f, hitPos) * MathF.PI / 180f;
+                ball.Velocity = new Vector2(MathF.Sin(angle), -MathF.Cos(angle)) * ball.Speed * ball.SpeedMultiplier;
+
+                // Push ball above paddle to prevent re-collision
+                ball.Position.Y = _paddle.Position.Y - ball.Radius;
+            }
         }
     }
 
@@ -105,6 +168,7 @@ public class BreakoutGame : Game
                 DrawTitle();
                 break;
             case GameState.Playing:
+                DrawPlaying();
                 break;
             case GameState.LevelComplete:
                 break;
@@ -141,5 +205,13 @@ public class BreakoutGame : Game
             _spriteBatch.DrawString(_font, startText, startPos, Color.White,
                 0f, Vector2.Zero, startScale, SpriteEffects.None, 0f);
         }
+    }
+
+    private void DrawPlaying()
+    {
+        _paddle.Draw(_spriteBatch);
+
+        foreach (var ball in _balls)
+            ball.Draw(_spriteBatch);
     }
 }
