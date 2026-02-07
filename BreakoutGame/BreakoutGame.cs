@@ -75,6 +75,10 @@ public class BreakoutGame : Game
 
         // Create paddle (positioned near bottom of screen)
         _paddle = new Paddle(_pixel, new Vector2(300, 1040));
+
+        // Create initial ball
+        var ball = new Ball(_pixel, new Vector2(360, 1032), 450f);
+        _balls.Add(ball);
     }
 
     protected override void Update(GameTime gameTime)
@@ -83,8 +87,14 @@ public class BreakoutGame : Game
         InputManager.Update();
 
         // TODO: Implement state machine based on GameManager.State
-        // For now, just update the paddle
+        // For now, just update the paddle and balls
         _paddle?.Update(gameTime);
+
+        // Update all balls
+        foreach (var ball in _balls)
+        {
+            ball.Update(gameTime, _paddle);
+        }
 
         base.Update(gameTime);
     }
@@ -100,7 +110,11 @@ public class BreakoutGame : Game
         // 2. Power-ups (TODO)
         // 3. Paddle
         _paddle?.Draw(_spriteBatch);
-        // 4. Balls (TODO)
+        // 4. Balls
+        foreach (var ball in _balls)
+        {
+            ball.Draw(_spriteBatch);
+        }
         // 5. HUD (TODO)
         // 6. Overlays (TODO)
 
